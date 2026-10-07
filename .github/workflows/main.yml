@@ -1,0 +1,33 @@
+name: Cloud Bot Max
+on:
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install playwright requests
+      - run: playwright install --with-deps chromium firefox webkit
+      - run: python bot.py
+
+      - name: Save Progress
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add views.txt
+          git commit -m "Update views count" || exit 0
+          git push
+
+      - name: Auto Restart
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run "Cloud Bot Max" --ref main
